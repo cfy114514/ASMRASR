@@ -33,7 +33,7 @@
   <p align="center">
     用机器学习为DL上的音频生成中文字幕
     <br>
-    同样适用于JAV
+    同样适用于日语动漫的汉化
     <br>
     <a href="https://github.com/4evergr8/asmrasr/issues/new">🐞故障报告</a>
     ·
