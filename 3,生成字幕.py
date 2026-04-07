@@ -7,7 +7,7 @@ import torch
 from faster_whisper import WhisperModel
 ##############################################################################################################################
 device = "cuda" if torch.cuda.is_available() else "cpu"
-compute_type ="int8"
+compute_type ="float32"
 path_model="model"
 asr_language="ja"
 asr_model="4evergr8/whisper-large-v2-translate-zh-v0.2-st-ct2"
