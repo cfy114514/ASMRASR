@@ -1,88 +1,35 @@
+import ffmpeg_downloader
 import os
-import shutil
-import subprocess
+from config import config
 from audio_separator.separator import Separator
-#############################################################################################################################
-path_pre="0pre"
-path_model="model"
-path_audio="1audio"
-sep_model="MDX23C-8KFFT-InstVoc_HQ_2.ckpt"
-#############################################################################################################################
-for filename in os.listdir(path_pre):
-    if filename.lower().endswith((".wav", ".mp3", ".flac")):
-        basename = os.path.splitext(filename)[0]
-
-        slice_path = os.path.join(path_pre, f"{basename}-slice")
-        split_path = os.path.join(path_pre, f"{basename}-split")
-        audio_path = os.path.join(path_pre, filename)
-
-        if not os.path.isfile(audio_path):
-            continue
-
-        # ===== 切片 =====
-        if os.path.exists(slice_path):
-            shutil.rmtree(slice_path)
-        os.makedirs(slice_path)
-
-        segment_length = 1200
-
-        command = [
-            "ffmpeg",
-            "-i", audio_path,
-            "-f", "segment",
-            "-segment_time", str(segment_length),
-            "-c", "copy",
-            os.path.join(slice_path, "%03d.wav")
-        ]
-        subprocess.run(command, check=True)
-
-        # ===== 分离 =====
-        if not os.path.exists(split_path):
-            os.makedirs(split_path)
-
-        separator = Separator(
-            model_file_dir=path_model,
-            output_dir=split_path,
-            output_single_stem="vocals",
-            sample_rate=16000,
-        )
-        separator.load_model(model_filename=sep_model)
-
-        for file in os.listdir(slice_path):
-            if file.endswith(".wav"):
-                slice_basename = os.path.splitext(file)[0]
-
-                exists = any(name.startswith(slice_basename) for name in os.listdir(split_path))
-                if exists:
-                    print(f"跳过: {file}")
-                    continue
-
-                separator.separate(os.path.join(slice_path, file))
-
-        # ===== 拼接 =====
-        file_list = sorted(
-            [f for f in os.listdir(split_path) if f.endswith(".wav")],
-            key=lambda x: int(x[:3])
-        )
-
-        list_path = os.path.join(path_pre, f"{basename}_list.txt")
-        with open(list_path, "w", encoding="utf-8") as f:
-            for f_name in file_list:
-                full_path = os.path.join(split_path, f_name)
-                f.write(f"file '{full_path}'\n")
-
-        output_path = os.path.join(path_audio, f"{basename}.wav")
-
-        command = [
-            "ffmpeg",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", list_path,
-            "-c", "copy",
-            output_path
-        ]
-        subprocess.run(command, check=True)
-
-        print(f"完成人声分离: {output_path}")
-
-
+import subprocess
+import sys
+subprocess.run(
+    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
+    input="y\n",
+    text=True
+)
+ffmpeg_downloader.add_path()
+if not os.path.exists(config["path"]["pre"]) or not os.listdir(config["path"]["pre"]):
+    print(f"错误：目录不存在或为空")
+    exit(0)
+separator = Separator(
+    model_file_dir=config["path"]["model"],
+    output_dir=config["path"]["audio"],  # 分离后的音频存放在 1audio
+    output_single_stem="vocals",  # 仅提取人声
+    sample_rate=config["sep"]["sample_rate"],  # 44100
+    use_autocast=True,
+    chunk_duration=config["sep"]["chunk_duration"],
+    mdxc_params={
+        "segment_size": 256,
+        "override_model_segment_size": True,
+        "batch_size": 8,
+        "overlap": 8,
+        "pitch_shift": 0
+    },
+)
+print(f"正在加载模型: {config['model']['sep']}")
+separator.load_model(model_filename=config["model"]["sep"])
+print(f"开始批量处理目录 ...")
+separator.separate(config["path"]["pre"])
+print("\n所有文件人声分离处理完成！")
