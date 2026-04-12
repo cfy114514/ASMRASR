@@ -51,7 +51,7 @@
 
 
 ### 云端运行（不稳定，调试中）
-* 点击<a href="https://colab.research.google.com/github/4evergr8/ASMRASR/blob/main/Colab.ipynb" target="_blank">
+* 点击<a href="https://colab.research.google.com/github/4evergr8/ASMRASR/blob/main/笔记本.ipynb" target="_blank">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" width="80">
 </a>在Colab中打开项目
 * 选择GPU运行时，点击全部运行，并允许访问云盘文件
