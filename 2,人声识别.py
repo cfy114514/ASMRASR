@@ -1,52 +1,72 @@
 import os
-import pysrt
+import glob
+import subprocess
+import sys
+from pathlib import Path
+import ffmpeg_downloader
 import torch
+import pysrt
+from config import config
+subprocess.run(
+    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
+    input="y\n",
+    text=True
+)
+ffmpeg_downloader.add_path()
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
-#############################################################################################################################
-device = "cuda" if torch.cuda.is_available() else "cpu"
-path_audio="1audio"
-path_vad="2vad"
-path_model="model"
-vad_model="4evergr8/pyannote-segmentation-3.0"
-vad_min_duration_on=0.3
-vad_min_duration_off=0.1
-##############################################################################################################################
-print('设备:', device)
-vad = Model.from_pretrained(checkpoint=vad_model, cache_dir=path_model)
-vad.to(torch.device(device))
+extensions = ("wav", "mp3", "flac")
+pattern = os.path.join(config["path"]["audio"], "*.*")
+audio_files = [
+    f for f in glob.glob(pattern)
+    if f.lower().endswith(extensions)
+]
+
+if not audio_files:
+    print(f"在 {config['path']['audio']} 中没有找到可处理的音频文件")
+    exit(0)
+
+print('设备:', config["device"])
+
+# 2. 初始化 VAD 模型
+vad = Model.from_pretrained(
+    checkpoint=config["model"]["vad"],
+    cache_dir=config["path"]["model"]
+)
+vad.to(torch.device(config["device"]))
+
 vad_pipeline = VoiceActivityDetection(segmentation=vad)
+# 注意：修正了之前代码中的变量名错误 config.vad_min.duration_off -> config["vad"]["min_duration_off"]
 vad_pipeline.instantiate({
-    "min_duration_on": vad_min_duration_on,
-    "min_duration_off": vad_min_duration_off,
+    "min_duration_on": config["vad"]["min_duration_on"],
+    "min_duration_off": config["vad"]["min_duration_off"],
 })
 
-for filename in os.listdir(path_audio):
-    if not filename.endswith((".wav", ".mp3", ".flac")):
-        continue
-    audio_path = os.path.join(path_audio, filename)
+# 3. 开始循环处理
+for audio_path in audio_files:
     print(f"\n处理音频: {audio_path}")
 
-    basename = os.path.splitext(filename)[0]
-    vad_log_path = os.path.join(path_vad, f"{basename}.srt")
-    """
-        if os.path.exists(vad_log_path):
-        print('VAD记录存在，跳过')
-        continue
-    """
+    file_obj = Path(audio_path)
+    basename = file_obj.stem
+    vad_log_path = os.path.join(config["path"]["vad"], f"{basename}.srt")
 
 
+
+    # 4. 执行 VAD 识别
     vad_result = vad_pipeline(audio_path)
-    srt = pysrt.SubRipFile()
 
-    for idx, (segment, _, score) in enumerate(vad_result.itertracks(yield_label=True), start=1):
+    # 5. 生成 SRT
+    srt = pysrt.SubRipFile()
+    for idx, (segment, _, _) in enumerate(vad_result.itertracks(yield_label=True), start=1):
         sub_item = pysrt.SubRipItem(
             index=idx,
             start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
             end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
-            text=f"默认文本{idx}"
+            text=f"Speech_{idx}"
         )
         srt.append(sub_item)
 
-    srt.save(vad_log_path)
-    print(f"VAD记录写入: {vad_log_path}")
+    srt.save(vad_log_path, encoding='utf-8')
+    print(f"VAD记录写入完成: {vad_log_path}")
+
+print("\n所有音频 VAD 处理完毕！")
