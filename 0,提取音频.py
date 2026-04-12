@@ -1,33 +1,38 @@
 import os
+import glob
+import sys
+from pathlib import Path
 import subprocess
+import ffmpeg_downloader
+from config import config
+subprocess.run(
+    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
+    input="y\n",
+    text=True
+)
+ffmpeg_downloader.add_path()
+extensions = ("mp4", "mkv", "avi", "mov", "flv")
+pattern = os.path.join(config["path"]["pre"], "*.*")
 
+files = [f for f in glob.glob(pattern) if f.lower().endswith(extensions)]
 
-path_pre="0pre"
-os.system("chcp 65001")
+for file_path in files:
+    file = Path(file_path)
+    output = file.with_suffix(".flac")
 
-for filename in os.listdir(path_pre):
-    if filename.lower().endswith((".mp4", ".mkv", ".avi", ".mov", ".flv")):
-        video_path = os.path.join(path_pre, filename)
+    print(f"提取中: {file.name} -> {output.name}")
 
-        if os.path.isfile(video_path):
-            basename = os.path.splitext(filename)[0]
-            audio_output_path = os.path.join(path_pre, f"{basename}.wav")
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i", str(file),
+        "-vn",
+        "-acodec", "flac",
+        "-ar", str(config["sep"]["sample_rate"]),
+        "-ac", "2",
+        str(output)
+    ]
 
-            if os.path.exists(audio_output_path):
-                print(f"已存在音频，跳过: {audio_output_path}")
-                continue
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-            command = [
-                "ffmpeg",
-                "-i", video_path,
-                "-vn",
-                "-acodec", "pcm_s16le",
-                "-ar", "16000",
-                "-ac", "1",
-                audio_output_path
-            ]
-
-            subprocess.run(command, check=True)
-            print(f"已提取音频: {audio_output_path}")
-
-
+print("全部处理完成")
