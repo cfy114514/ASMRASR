@@ -1,6 +1,5 @@
 ffmpeg_downloader
 audio-separator[gpu]
 pysrt
-torch
-pyannote-core
+pyannote.audio
 faster-whisper
