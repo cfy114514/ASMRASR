@@ -1,10 +1,6 @@
-pyannote-core
-onnxruntime
-huggingface-hub
-transformers
-torch
-numpy==2.2.5
-pyannote.audio
-faster_whisper
+ffmpeg_downloader
+audio-separator[gpu]
 pysrt
-librosa
+torch
+pyannote-core
+faster-whisper
