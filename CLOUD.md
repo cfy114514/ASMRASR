@@ -57,3 +57,6 @@ python -m unittest discover -s tests -v
 已下载原日→中模型，CPU int8 成功加载，1 秒合成静音 WAV 经解码和 Silero VAD 输出空 SRT，符合预期。
 这验证加载/解码/VAD/写出链路，不验证有声翻译质量或长音频速度。CUDA 尚未实测。
 PyAV 固定为 16.0.1：实际发现 PyAV 19 与 faster-whisper 1.2.1 的 `metadata_errors` 参数不兼容。
+
+在内存受限的容器里，请把模型缓存放到磁盘工作目录，避免把约 3GB 权重放在占用内存的 tmpfs `/tmp`。
+新入口在创建 VAD 会话前关闭 ONNX Runtime 遥测；离线处理不需要向遥测服务器联网。

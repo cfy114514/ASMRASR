@@ -52,6 +52,7 @@ def write_srt(segments, target):
                 previous = start
                 count += 1
                 out.write(f'{count}\n{timestamp(start)} --> {timestamp(end)}\n{text}\n\n')
+                out.flush()
         os.replace(name, target)
     finally:
         if os.path.exists(name):
@@ -90,6 +91,8 @@ def main(argv=None):
             for source, target in tasks:
                 print(f'{source} -> {target}')
             return 0
+        import onnxruntime
+        onnxruntime.disable_telemetry_events()
         from faster_whisper import WhisperModel
         model = WhisperModel(args.model, device=args.device, compute_type=compute,
                              cpu_threads=args.threads, download_root=args.model_dir,
