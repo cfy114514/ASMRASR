@@ -60,3 +60,14 @@ PyAV 固定为 16.0.1：实际发现 PyAV 19 与 faster-whisper 1.2.1 的 `metad
 
 在内存受限的容器里，请把模型缓存放到磁盘工作目录，避免把约 3GB 权重放在占用内存的 tmpfs `/tmp`。
 新入口在创建 VAD 会话前关闭 ONNX Runtime 遥测；离线处理不需要向遥测服务器联网。
+
+### 耳语素材的时间轴检查
+
+Silero VAD 对低声、气声素材可能把不相邻的语音拼接后映射成过长字幕。
+如出现单条字幕几十秒甚至更长，请用独立输出目录运行 `--no-vad` 对照：
+
+```bash
+.venv-cloud/bin/python cloud_asr.py input.mp3 --offline --no-vad --output-dir 3asr-no-vad
+```
+
+不要仅凭程序退出成功判断字幕准确；核查时间范围、异常长句和重复内容，并人工抽听。
