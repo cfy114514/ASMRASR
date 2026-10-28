@@ -52,3 +52,8 @@ python -m unittest discover -s tests -v
 
 自动测试覆盖路径、格式、重复文件名、时间戳、错误恢复、UTF-8 输出和模型调用参数。
 它们不等于日语识别/中文翻译质量验收；真实样本字幕仍需和音频核对。
+
+本次实际环境：Linux / Python 3.12，已安装依赖并通过 `pip check`、7 项单元测试。
+已下载原日→中模型，CPU int8 成功加载，1 秒合成静音 WAV 经解码和 Silero VAD 输出空 SRT，符合预期。
+这验证加载/解码/VAD/写出链路，不验证有声翻译质量或长音频速度。CUDA 尚未实测。
+PyAV 固定为 16.0.1：实际发现 PyAV 19 与 faster-whisper 1.2.1 的 `metadata_errors` 参数不兼容。
