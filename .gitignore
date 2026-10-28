@@ -10,4 +10,6 @@
 0pre/*
 1audio/*
 2vad/*
-3asr/* 
+3asr/*
+.venv-cloud/
+*.tmp
